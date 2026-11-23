@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y ninja-build clang
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ./build/lob_tests
+      - name: Benchmark (smoke run, shared CI runner, numbers not meaningful)
+        run: |
+          ./build/bench_latency 500000 1
+          ./build/bench_pipeline 1000000 0 1 1
