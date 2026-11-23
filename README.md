@@ -4,6 +4,8 @@ A single-instrument limit order book and price-time priority matching engine in 
 
 Header-only, no dependencies beyond the standard library.
 
+**Live demo: [low-latency-order-book.vercel.app](https://low-latency-order-book.vercel.app)**
+
 **Interactive demo:** the same engine compiled to WebAssembly, with a live order ladder, trade tape, an order ticket you can trade with, and an in-browser benchmark against the `std::map` book. Source in [`demo/`](demo); rebuild with `docker run --rm -v "$PWD":/src -w /src emscripten/emsdk:3.1.74 sh demo/build.sh`.
 
 ## Results
