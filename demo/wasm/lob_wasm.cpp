@@ -84,6 +84,37 @@ EMSCRIPTEN_KEEPALIVE int lob_depth(int side, int max_levels) {
 }
 EMSCRIPTEN_KEEPALIVE std::int32_t* lob_depth_ptr(int side) { return g_depth[side]; }
 
+// Top levels with their actual queues, front of the queue first. Per level:
+// price, total, count, k, then k pairs of (id, qty). Returns levels written.
+constexpr int kLadderLevels = 12, kLadderOrders = 40;
+std::uint32_t g_ladder[2][kLadderLevels * (4 + 2 * kLadderOrders)];
+EMSCRIPTEN_KEEPALIVE int lob_ladder(int side, int max_levels) {
+  if (max_levels > kLadderLevels) max_levels = kLadderLevels;
+  const Side s = side == 0 ? Side::Buy : Side::Sell;
+  std::uint32_t* out = g_ladder[side];
+  int n = 0;
+  std::size_t w = 0;
+  g_book->for_each_level(s, [&](Price p, Qty q, std::uint32_t c) {
+    if (n >= max_levels) return;
+    out[w++] = static_cast<std::uint32_t>(p);
+    out[w++] = q;
+    out[w++] = c;
+    const std::size_t kpos = w++;
+    std::uint32_t k = 0;
+    g_book->for_each_order(s, p, [&](OrderId id, Qty oq) {
+      if (k < kLadderOrders) {
+        out[w++] = static_cast<std::uint32_t>(id);
+        out[w++] = oq;
+        ++k;
+      }
+    });
+    out[kpos] = k;
+    ++n;
+  });
+  return n;
+}
+EMSCRIPTEN_KEEPALIVE std::uint32_t* lob_ladder_ptr(int side) { return g_ladder[side]; }
+
 // Replays the same synthetic flow through OrderBook and the std::map
 // ReferenceBook inside the browser. Results: [fast ms, ref ms, fast traded,
 // ref traded, fast resting, ref resting, ops].

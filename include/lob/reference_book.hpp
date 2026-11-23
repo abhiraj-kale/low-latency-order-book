@@ -67,6 +67,16 @@ class ReferenceBook {
     if (side == Side::Buy) visit(bids_); else visit(asks_);
   }
 
+  template <class F>
+  void for_each_order(Side side, Price price, F&& f) const {
+    auto visit = [&](const auto& book) {
+      const auto it = book.find(price);
+      if (it == book.end()) return;
+      for (const auto& o : it->second) f(o.id, o.qty);
+    };
+    if (side == Side::Buy) visit(bids_); else visit(asks_);
+  }
+
  private:
   struct Node {
     OrderId id;

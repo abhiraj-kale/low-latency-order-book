@@ -119,6 +119,15 @@ class OrderBook {
     }
   }
 
+  // Visits the resting orders at one price in time priority, front of the
+  // queue first: f(id, qty). This is the order fills will take.
+  template <class F>
+  void for_each_order(Side side, Price price, F&& f) const {
+    if (price < min_price_ || price > max_price()) return;
+    const Level& lvl = levels_[static_cast<int>(side)][price - min_price_];
+    for (std::uint32_t i = lvl.head; i != kNull; i = pool_[i].next) f(pool_[i].id, pool_[i].qty);
+  }
+
  private:
   struct Order {  // 32 bytes: two orders per cache line
     OrderId id;

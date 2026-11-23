@@ -3,234 +3,218 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Low-Latency Order Book</title>
-  <meta name="description" content="A C++20 limit order book and matching engine compiled to WebAssembly. Trade against it live, benchmark it in your browser, and see how it works." />
-  <meta property="og:title" content="Low-Latency Order Book" />
-  <meta property="og:description" content="C++20 matching engine: 46M ops/s native, 33 ns median add. Running live in your browser via WebAssembly." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230b0f17'/><rect x='6' y='7' width='14' height='4' rx='1.5' fill='%23ff5d7a'/><rect x='6' y='14' width='20' height='4' rx='1.5' fill='%23ff5d7a' opacity='.6'/><rect x='6' y='21' width='17' height='4' rx='1.5' fill='%2331e0a1'/></svg>" />
+  <title>LOB Arcade</title>
+  <meta name="description" content="A C++20 limit order book and matching engine compiled to WebAssembly, played like an arcade game. Watch price-time priority happen, trade against it, race it against std::map." />
+  <meta property="og:title" content="LOB Arcade: a C++20 matching engine you can play" />
+  <meta property="og:description" content="46M ops/s native, 33 ns median add. The live order book is a pixel city: every tower a price level, every lit window a resting order." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'><rect width='8' height='8' fill='%231a1c2c'/><rect x='1' y='3' width='2' height='4' fill='%2338b764'/><rect x='5' y='1' width='2' height='6' fill='%23b13e53'/><rect x='1' y='4' width='1' height='1' fill='%23ffcd75'/><rect x='6' y='2' width='1' height='1' fill='%23ffcd75'/></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <nav class="nav">
-    <a class="brand" href="#top"><span class="brand-mark"></span>lob<span class="dim">::</span>OrderBook</a>
-    <div class="nav-links">
-      <a href="#live">Live book</a>
-      <a href="#bench">Benchmark</a>
-      <a href="#inside">Inside</a>
-      <a class="gh" href="https://github.com/abhiraj-kale/low-latency-order-book" target="_blank" rel="noopener">GitHub</a>
+  <header class="topbar">
+    <a href="#top" class="logo"><span class="logo-mark"></span>LOB ARCADE</a>
+    <div class="score-strip" aria-label="Engine operations processed">
+      <span class="lbl">1UP</span><span class="val" id="top-score">00000000</span>
+      <span class="lbl hi">HI</span><span class="val">46490000</span><span class="lbl unit">OPS/S</span>
     </div>
-  </nav>
-
-  <!-- HERO -->
-  <header class="hero" id="top">
-    <canvas id="hero-canvas" aria-hidden="true"></canvas>
-    <div class="hero-inner">
-      <div class="pill reveal"><span class="dot live-dot"></span> C++20 engine running in your browser via WebAssembly</div>
-      <h1 class="reveal">Low-latency<br /><span class="grad">limit order book</span></h1>
-      <p class="lede reveal">A price-time priority matching engine built so the hot path never allocates, never locks, and never walks a tree. Every bid, ask, and trade on this page goes through the same C++ code that benchmarks at tens of millions of operations per second.</p>
-      <div class="hero-cta reveal">
-        <a class="btn primary" href="#live">Trade against it</a>
-        <a class="btn ghost" href="#bench">Run the benchmark</a>
-      </div>
-      <div class="hero-stats reveal">
-        <div class="stat"><div class="num" data-count="46" data-suffix="M">0</div><div class="lbl">ops/s native, one core</div></div>
-        <div class="stat"><div class="num" data-count="33" data-suffix=" ns">0</div><div class="lbl">median add, incl. matching</div></div>
-        <div class="stat"><div class="num" data-count="5.4" data-decimals="1" data-suffix="x">0</div><div class="lbl">faster than std::map book</div></div>
-        <div class="stat"><div class="num" data-count="19" data-suffix="M">0</div><div class="lbl">msgs/s across SPSC queue</div></div>
-      </div>
-    </div>
-    <a class="scroll-hint" href="#live" aria-label="Scroll to live book"><span></span></a>
+    <nav class="topnav">
+      <a href="#play">PLAY</a>
+      <a href="#scores">SCORES</a>
+      <a href="#manual">MANUAL</a>
+      <button class="sound" id="sound" aria-pressed="false">SOUND OFF</button>
+      <a class="gh" href="https://github.com/abhiraj-kale/low-latency-order-book" target="_blank" rel="noopener">SOURCE</a>
+    </nav>
   </header>
 
-  <!-- LIVE BOOK -->
-  <section class="section" id="live">
-    <div class="section-head reveal">
-      <span class="kicker">01 / Live</span>
-      <h2>A live market, matched in WASM</h2>
-      <p>A simulated crowd of traders sends orders into the engine. Passive orders rest on the ladder, aggressive ones cross the spread and print trades. Turn the flow up to a million orders a second, or send your own.</p>
+  <!-- HERO: the order book as a city -->
+  <section class="hero" id="top">
+    <canvas id="city" aria-label="Live pixel skyline of the order book"></canvas>
+    <div class="hero-copy">
+      <p class="eyebrow wipe">A C++20 MATCHING ENGINE, LIVE IN YOUR BROWSER</p>
+      <h1 class="title wipe"><span>THE</span> <span>ORDER</span> <span>BOOK</span></h1>
+      <p class="legend wipe">This skyline is the live book. <b class="g">Green towers</b> are bids, <b class="r">red towers</b> are asks, the avenue between them is the spread, and every <b class="y">lit window</b> is one resting order. Fireworks are trades.</p>
+      <a class="press-start" href="#play">&#9654; PRESS START</a>
+    </div>
+  </section>
+
+  <div class="coins">
+    <div class="coin"><b>46M</b><span>ops/s, one core</span></div>
+    <div class="coin"><b>33ns</b><span>median add + match</span></div>
+    <div class="coin"><b>5.4x</b><span>faster than std::map</span></div>
+    <div class="coin"><b>19M</b><span>msgs/s across threads</span></div>
     </div>
 
-    <div class="terminal reveal">
-      <div class="term-bar">
-        <div class="term-dots"><i></i><i></i><i></i></div>
-        <div class="term-title">LOB/USD &middot; tick 0.01</div>
-        <div class="term-status"><span class="dot live-dot" id="status-dot"></span><span id="status-text">loading engine</span></div>
-      </div>
+  <!-- STAGE 1 -->
+  <section class="stage" id="play">
+    <div class="stage-head wipe">
+      <span class="stage-no">STAGE 1</span>
+      <h2>THE LIVE BOOK</h2>
+      <p>The screen shows every price level's actual queue, oldest order at the front. Watch incoming orders take the front of the queue first: that is price-time priority. Then pick a side and fire your own order at it.</p>
+    </div>
 
-      <div class="term-grid">
-        <!-- left: stats + controls + ticket -->
-        <aside class="panel side">
-          <div class="kpis">
-            <div class="kpi"><span>Last</span><b id="k-last">--</b></div>
-            <div class="kpi"><span>Spread</span><b id="k-spread">--</b></div>
-            <div class="kpi"><span>Resting</span><b id="k-resting">0</b></div>
-            <div class="kpi"><span>Trades</span><b id="k-trades">0</b></div>
-            <div class="kpi wide"><span>Engine ops</span><b id="k-ops">0</b></div>
-            <div class="kpi wide"><span>Engine time / op (your browser)</span><b id="k-nsop">--</b></div>
-          </div>
-
-          <div class="control">
-            <div class="control-row"><label for="rate">Order flow</label><output id="rate-out">300 / s</output></div>
-            <input type="range" id="rate" min="0" max="100" value="30" />
-            <div class="chips">
-              <button class="chip" data-rate="20">Calm</button>
-              <button class="chip" data-rate="45">Busy</button>
-              <button class="chip" data-rate="100">1M / s</button>
-              <button class="chip" id="pause">Pause</button>
-            </div>
-          </div>
-
-          <form class="ticket" id="ticket" autocomplete="off">
-            <div class="ticket-head">Order ticket</div>
-            <div class="seg" role="group" aria-label="Side">
-              <button type="button" class="seg-btn buy active" data-side="0">Buy</button>
-              <button type="button" class="seg-btn sell" data-side="1">Sell</button>
-            </div>
-            <label class="field"><span>Limit price</span><input id="t-price" inputmode="decimal" value="100.00" /></label>
-            <label class="field"><span>Quantity</span><input id="t-qty" inputmode="numeric" value="250" /></label>
-            <div class="ticket-quick">
-              <button type="button" class="link" id="t-touch">Join best</button>
-              <button type="button" class="link" id="t-cross">Cross 3 ticks</button>
-            </div>
-            <button type="submit" class="btn send buy" id="t-send">Send buy order</button>
-            <div class="ticket-msg" id="t-msg" aria-live="polite"></div>
-            <button type="button" class="link cancel-all" id="t-cancel">Cancel my orders</button>
-          </form>
-        </aside>
-
-        <!-- center: chart + ladder -->
-        <div class="panel center">
-          <div class="chart-wrap">
-            <div class="chart-head">
-              <div class="tabs" role="tablist">
-                <button class="tab active" data-chart="price" role="tab">Price</button>
-                <button class="tab" data-chart="depth" role="tab">Depth</button>
-              </div>
-              <div class="chart-legend"><span class="lg bid">Bids</span><span class="lg ask">Asks</span></div>
-            </div>
-            <canvas id="chart"></canvas>
-          </div>
-          <div class="ladder" id="ladder">
-            <div class="ladder-head"><span>Price</span><span>Size</span><span>Orders</span></div>
-            <div class="ladder-side asks" id="asks"></div>
-            <div class="spread-row" id="spread-row"><span id="mid">--</span><span class="spread-lbl" id="spread-lbl">spread --</span></div>
-            <div class="ladder-side bids" id="bids"></div>
-          </div>
+    <div class="cabinet wipe">
+      <div class="marquee"><span>&#9733;</span> LOB/USD <span class="dim">TICK 0.01</span> <span>&#9733;</span><span class="status" id="status">LOADING ENGINE</span></div>
+      <div class="cab-body">
+        <div class="screen-wrap">
+          <canvas id="screen" aria-label="Order book ladder with per-level queues"></canvas>
+          <div class="scan"></div>
         </div>
-
-        <!-- right: tape -->
-        <aside class="panel tape-panel">
-          <div class="tape-head"><span>Trades</span><span class="dim" id="tape-rate">0 / s</span></div>
-          <div class="tape-cols"><span>Price</span><span>Qty</span><span>Maker / Taker</span></div>
-          <ul class="tape" id="tape"></ul>
+        <aside class="hud">
+          <div class="hud-box">
+            <div class="hud-row big"><span>SCORE</span><b id="h-ops">0</b></div>
+            <div class="hud-grid">
+              <div><span>TRADES</span><b id="h-trades">0</b></div>
+              <div><span>RESTING</span><b id="h-resting">0</b></div>
+              <div><span>LAST</span><b id="h-last">--</b></div>
+              <div><span>SPREAD</span><b id="h-spread">--</b></div>
+            </div>
+            <div class="hud-row"><span>ENGINE TIME / OP</span><b id="h-ns">--</b></div>
+          </div>
+          <div class="tape-box">
+            <div class="tape-title">TAPE <span id="tape-rate">0/S</span></div>
+            <ol class="tape" id="tape"></ol>
+          </div>
         </aside>
       </div>
+
+      <div class="deck">
+        <div class="deck-group">
+          <span class="deck-label">DIFFICULTY</span>
+          <div class="btn-row" id="difficulty">
+            <button class="pbtn" data-rate="40">EASY</button>
+            <button class="pbtn on" data-rate="220">NORMAL</button>
+            <button class="pbtn" data-rate="4000">HARD</button>
+            <button class="pbtn hot" data-rate="1000000">INSANE</button>
+          </div>
+          <button class="pbtn" id="pause">PAUSE</button>
+        </div>
+
+        <form class="deck-group ticket" id="ticket" autocomplete="off">
+          <span class="deck-label">YOUR ORDER</span>
+          <div class="btn-row side">
+            <button type="button" class="pbtn buy on" data-side="0">BUY</button>
+            <button type="button" class="pbtn sell" data-side="1">SELL</button>
+          </div>
+          <div class="stepper">
+            <span>PRICE</span>
+            <button type="button" class="pbtn sq" data-step="price" data-d="-1">&#9664;</button>
+            <input id="t-price" value="100.00" inputmode="decimal" aria-label="Limit price" />
+            <button type="button" class="pbtn sq" data-step="price" data-d="1">&#9654;</button>
+          </div>
+          <div class="stepper">
+            <span>QTY</span>
+            <button type="button" class="pbtn sq" data-step="qty" data-d="-1">&#9664;</button>
+            <input id="t-qty" value="250" inputmode="numeric" aria-label="Quantity" />
+            <button type="button" class="pbtn sq" data-step="qty" data-d="1">&#9654;</button>
+          </div>
+          <div class="btn-row">
+            <button type="button" class="pbtn small" id="t-join">JOIN BEST</button>
+            <button type="button" class="pbtn small" id="t-cross">CROSS 3</button>
+            <button type="button" class="pbtn small" id="t-cancel">CANCEL MINE</button>
+          </div>
+          <button type="submit" class="fire" id="fire">FIRE!</button>
+        </form>
+      </div>
+
+      <div class="dialog" aria-live="polite"><p id="dialog"></p><span class="caret">&#9660;</span></div>
     </div>
   </section>
 
-  <!-- BENCHMARK -->
-  <section class="section" id="bench">
-    <div class="section-head reveal">
-      <span class="kicker">02 / Benchmark</span>
-      <h2>Fast where it counts</h2>
-      <p>Same synthetic order flow through both books: the engine, and a textbook book built on <code>std::map</code>, <code>std::list</code>, and <code>std::unordered_map</code>. Both must end with identical trades and resting orders.</p>
+  <!-- STAGE 2 -->
+  <section class="stage" id="scores">
+    <div class="stage-head wipe">
+      <span class="stage-no">STAGE 2</span>
+      <h2>HIGH SCORES</h2>
+      <p>Same order flow through two books: this engine, and the textbook version built on <code>std::map</code> + <code>std::list</code> + <code>std::unordered_map</code>. Both must end with identical trades and resting orders, or the run does not count.</p>
     </div>
 
-    <div class="bench-grid">
-      <div class="card reveal">
-        <div class="card-head"><h3>Native</h3><span class="tag">i7-8565U &middot; g++ -O3 &middot; pinned core</span></div>
-        <div class="bars" id="native-bars">
-          <div class="bar-group">
-            <div class="bar-label">Throughput <span class="dim">M ops/s, higher is better</span></div>
-            <div class="bar-row"><span class="who">OrderBook</span><div class="track"><div class="fill fast" data-w="46"></div></div><b>46.5</b></div>
-            <div class="bar-row"><span class="who">std::map</span><div class="track"><div class="fill slow" data-w="8.6"></div></div><b>8.6</b></div>
-          </div>
-          <div class="bar-group">
-            <div class="bar-label">Add, p50 <span class="dim">ns, lower is better</span></div>
-            <div class="bar-row"><span class="who">OrderBook</span><div class="track"><div class="fill fast" data-w="33" data-max="150"></div></div><b>33</b></div>
-            <div class="bar-row"><span class="who">std::map</span><div class="track"><div class="fill slow" data-w="148" data-max="150"></div></div><b>148</b></div>
-          </div>
-          <div class="bar-group">
-            <div class="bar-label">Cancel, p50 <span class="dim">ns, lower is better</span></div>
-            <div class="bar-row"><span class="who">OrderBook</span><div class="track"><div class="fill fast" data-w="21" data-max="150"></div></div><b>21</b></div>
-            <div class="bar-row"><span class="who">std::map</span><div class="track"><div class="fill slow" data-w="64" data-max="150"></div></div><b>64</b></div>
-          </div>
-        </div>
-        <p class="fine">2M operations, latency from serialized rdtsc/rdtscp with timer overhead subtracted. Full table and tail percentiles in the README.</p>
+    <div class="score-grid">
+      <div class="board wipe">
+        <div class="board-title">NATIVE &middot; I7-8565U &middot; ONE PINNED CORE</div>
+        <table class="hs">
+          <thead><tr><th>RANK</th><th>PLAYER</th><th>OPS/S</th></tr></thead>
+          <tbody>
+            <tr><td>1ST</td><td class="rainbow">LOB::ORDERBOOK</td><td>46,490,000 <em class="blink">NEW!</em></td></tr>
+            <tr><td>2ND</td><td>STD::MAP BOOK</td><td>8,620,000</td></tr>
+          </tbody>
+        </table>
+        <table class="hs laps">
+          <thead><tr><th>FASTEST LAP</th><th>ENGINE</th><th>STD::MAP</th></tr></thead>
+          <tbody>
+            <tr><td>ADD P50</td><td>33 NS</td><td>148 NS</td></tr>
+            <tr><td>ADD P99</td><td>148 NS</td><td>391 NS</td></tr>
+            <tr><td>CANCEL P50</td><td>21 NS</td><td>64 NS</td></tr>
+            <tr><td>2 THREADS, P50</td><td colspan="2">170 NS ENQUEUE TO MATCHED &middot; 19M MSGS/S</td></tr>
+          </tbody>
+        </table>
+        <p class="fine">2M operations, timed per operation with serialized rdtsc, timer overhead subtracted. Laptop numbers: tails above p99 swing with Windows scheduling.</p>
       </div>
 
-      <div class="card reveal">
-        <div class="card-head"><h3>In your browser</h3><span class="tag" id="wasm-tag">WebAssembly &middot; single thread</span></div>
-        <div class="run-box">
-          <div class="run-select">
-            <button class="chip active" data-n="250000">250k ops</button>
-            <button class="chip" data-n="1000000">1M ops</button>
+      <div class="board wipe">
+        <div class="board-title">RACE IT IN THIS BROWSER</div>
+        <canvas id="race" aria-label="Race between the engine and std::map"></canvas>
+        <div class="race-controls">
+          <div class="btn-row" id="race-n">
+            <button class="pbtn small on" data-n="250000">250K OPS</button>
+            <button class="pbtn small" data-n="1000000">1M OPS</button>
           </div>
-          <button class="btn primary run" id="run-bench" disabled>Load engine...</button>
+          <button class="fire small" id="race-go" disabled>LOADING</button>
         </div>
-        <div class="bars" id="wasm-bars">
-          <div class="bar-group">
-            <div class="bar-label">Throughput <span class="dim">M ops/s in this tab</span></div>
-            <div class="bar-row"><span class="who">OrderBook</span><div class="track"><div class="fill fast" id="wb-fast"></div></div><b id="wv-fast">--</b></div>
-            <div class="bar-row"><span class="who">std::map</span><div class="track"><div class="fill slow" id="wb-ref"></div></div><b id="wv-ref">--</b></div>
-          </div>
-        </div>
-        <div class="verdict" id="verdict">WASM runs slower than native code, but the gap between the two designs holds up.</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- INSIDE -->
-  <section class="section" id="inside">
-    <div class="section-head reveal">
-      <span class="kicker">03 / Inside</span>
-      <h2>Four ideas doing the work</h2>
-      <p>No trees, no per-order heap allocation, no locks. Each structure below is animated with the same behavior the engine uses.</p>
-    </div>
-
-    <div class="inside-grid">
-      <article class="card viz-card reveal">
-        <div class="viz" id="viz-bitset"></div>
-        <h3>Occupancy bitset</h3>
-        <p>One bit per price level. When the best level empties, the next best price comes from <code>countr_zero</code> on 64-bit words, so a gap of 1,000 empty ticks costs about 16 reads.</p>
-      </article>
-      <article class="card viz-card reveal">
-        <div class="viz" id="viz-fifo"></div>
-        <h3>Intrusive FIFO per level</h3>
-        <p>Orders at a price form a doubly linked queue threaded through the 32-byte orders themselves, using 32-bit indices. Cancel from anywhere is O(1) and fills always take the oldest first.</p>
-      </article>
-      <article class="card viz-card reveal">
-        <div class="viz" id="viz-pool"></div>
-        <h3>Preallocated pool</h3>
-        <p>Every order slot exists before the first order arrives. A LIFO free list hands back the most recently freed slot, which is still warm in cache. Nothing calls <code>new</code> on the hot path.</p>
-      </article>
-      <article class="card viz-card reveal">
-        <div class="viz" id="viz-ring"></div>
-        <h3>Lock-free SPSC ring</h3>
-        <p>The gateway thread and the matching thread share a ring with head and tail on separate cache lines. Acquire/release ordering only, no locks, no compare-and-swap: 19M msgs/s end to end.</p>
-      </article>
-    </div>
-
-    <div class="card proof reveal">
-      <div class="proof-num"><span data-count="2" data-suffix="M">0</span><small>operations</small></div>
-      <div class="proof-text">
-        <h3>Checked against a reference book, trade by trade</h3>
-        <p>A randomized differential test replays 2 million orders through both the engine and the <code>std::map</code> book. Every result code, every trade (maker, taker, price, quantity), and the full depth of both sides must match exactly. CI runs it on GCC and Clang.</p>
+        <p class="race-result" id="race-result">Two cars, one track. Their speed is the measured ops/s of each book running the same orders as WebAssembly in this tab.</p>
       </div>
     </div>
   </section>
 
-  <footer class="footer">
-    <div>Built by <a href="https://github.com/abhiraj-kale" target="_blank" rel="noopener">Abhiraj Kale</a>. C++20, compiled to WebAssembly with Emscripten.</div>
-    <a class="btn ghost small" href="https://github.com/abhiraj-kale/low-latency-order-book" target="_blank" rel="noopener">View the source</a>
+  <!-- STAGE 3 -->
+  <section class="stage" id="manual">
+    <div class="stage-head wipe">
+      <span class="stage-no">STAGE 3</span>
+      <h2>INSTRUCTION MANUAL</h2>
+      <p>Four power-ups that make it fast. No trees, no heap allocation per order, no locks.</p>
+    </div>
+    <div class="items">
+      <article class="item wipe">
+        <canvas class="item-cv" id="m-bits"></canvas>
+        <div class="item-name">BITSET RADAR</div>
+        <div class="item-stats">BEST PRICE: O(1) &middot; NEXT BEST: 1 READ PER 64 TICKS</div>
+        <p>One bit per price level. When the best level empties, the next one is found with <code>countr_zero</code> on 64-bit words instead of checking levels one by one.</p>
+      </article>
+      <article class="item wipe">
+        <canvas class="item-cv" id="m-fifo"></canvas>
+        <div class="item-name">FIFO TRAIN</div>
+        <div class="item-stats">ADD: O(1) &middot; CANCEL ANYWHERE: O(1)</div>
+        <p>Each price level is a doubly linked queue threaded through the 32-byte orders themselves. New orders couple on at the back, fills leave from the front, cancels unhook from anywhere.</p>
+      </article>
+      <article class="item wipe">
+        <canvas class="item-cv" id="m-pool"></canvas>
+        <div class="item-name">ITEM POOL</div>
+        <div class="item-stats">MALLOC ON HOT PATH: 0</div>
+        <p>Every order slot exists before the first order arrives. A LIFO free list hands back the slot freed most recently, which is still warm in cache.</p>
+      </article>
+      <article class="item wipe">
+        <canvas class="item-cv" id="m-ring"></canvas>
+        <div class="item-name">SPSC LOOP</div>
+        <div class="item-stats">LOCKS: 0 &middot; CAS: 0 &middot; 19M MSGS/S</div>
+        <p>The gateway thread drops orders into a ring, the matching thread picks them up. Head and tail live on separate cache lines and sync with acquire/release only.</p>
+      </article>
+    </div>
+    <div class="proof wipe">
+      <div class="proof-big">2,000,000</div>
+      <div><b>ORDERS REPLAYED AGAINST A REFERENCE BOOK. 0 MISMATCHES.</b><p>A randomized differential test checks every result code, every trade, every queue order by order, and the full depth of both sides against the <code>std::map</code> book. CI runs it on GCC and Clang.</p></div>
+    </div>
+  </section>
+
+  <footer class="credits">
+    <p class="thanks">THANKS FOR PLAYING</p>
+    <p>CODE &middot; ABHIRAJ KALE &nbsp; ENGINE &middot; C++20 &rarr; WEBASSEMBLY &nbsp; PALETTE &middot; SWEETIE 16</p>
+    <a class="press-start" href="https://github.com/abhiraj-kale/low-latency-order-book" target="_blank" rel="noopener">INSERT COIN &middot; VIEW SOURCE</a>
   </footer>
 
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
   <script src="lob.js"></script>
+  <script src="pixel.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

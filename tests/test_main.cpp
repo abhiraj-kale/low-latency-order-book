@@ -126,6 +126,16 @@ TEST(cancel_middle_of_queue_keeps_fifo) {
   CHECK(t.size() == 2 && t[0].maker == 1 && t[1].maker == 3);
 }
 
+TEST(for_each_order_walks_the_queue_front_first) {
+  OrderBook b(small_cfg());
+  for (OrderId id = 1; id <= 5; ++id) b.add_limit(id, Side::Sell, 70, static_cast<Qty>(id * 10), ignore());
+  b.cancel(3);
+  b.add_limit(9, Side::Buy, 70, 15, ignore());  // takes all of 1 (10) and 5 of 2
+  std::vector<std::pair<OrderId, Qty>> q;
+  b.for_each_order(Side::Sell, 70, [&](OrderId id, Qty qty) { q.emplace_back(id, qty); });
+  CHECK((q == std::vector<std::pair<OrderId, Qty>>{{2, 15}, {4, 40}, {5, 50}}));
+}
+
 TEST(best_price_recovers_after_level_empties) {
   OrderBook b(small_cfg());
   b.add_limit(1, Side::Buy, 10, 1, ignore());
@@ -170,6 +180,17 @@ Depth depth(const Book& b, Side s) {
   return d;
 }
 
+// Every queue on one side, order by order, in time priority.
+using Queues = std::vector<std::pair<OrderId, Qty>>;
+template <class Book>
+Queues queues(const Book& b, Side s) {
+  Queues out;
+  b.for_each_level(s, [&](Price p, Qty, std::uint32_t) {
+    b.for_each_order(s, p, [&](OrderId id, Qty q) { out.emplace_back(id, q); });
+  });
+  return out;
+}
+
 void differential_run(std::uint64_t seed, std::size_t n) {
   BookConfig cfg;
   cfg.min_price = 0;
@@ -201,6 +222,7 @@ void differential_run(std::uint64_t seed, std::size_t n) {
     }
     if ((i & 4095) == 0 || i + 1 == flow.size()) {
       if (depth(*fast, Side::Buy) != depth(*ref, Side::Buy) || depth(*fast, Side::Sell) != depth(*ref, Side::Sell) ||
+          queues(*fast, Side::Buy) != queues(*ref, Side::Buy) || queues(*fast, Side::Sell) != queues(*ref, Side::Sell) ||
           fast->order_count() != ref->order_count()) {
         CHECK(false);
         std::printf("    depth diverged at op %zu\n", i);
