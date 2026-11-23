@@ -4,6 +4,8 @@ A single-instrument limit order book and price-time priority matching engine in 
 
 Header-only, no dependencies beyond the standard library.
 
+**Interactive demo:** the same engine compiled to WebAssembly, with a live order ladder, trade tape, an order ticket you can trade with, and an in-browser benchmark against the `std::map` book. Source in [`demo/`](demo); rebuild with `docker run --rm -v "$PWD":/src -w /src emscripten/emsdk:3.1.74 sh demo/build.sh`.
+
 ## Results
 
 Measured on a laptop (Intel Core i7-8565U, 4 cores / 8 threads, Windows 11, g++ 15.2 `-O3 -march=native`), thread pinned, 2M operations of synthetic order flow (55% adds, 45% cancels; about 1 in 10 operations is an aggressive order that crosses the spread). Latency is per operation, measured with serialized `rdtsc`/`rdtscp` with timer overhead subtracted. Numbers are the typical range across runs.
@@ -129,6 +131,9 @@ bench/
   bench_pipeline.cpp  gateway -> SPSC -> matcher, throughput and paced latency
 tests/
   test_main.cpp       unit + differential tests
+demo/
+  wasm/lob_wasm.cpp   C ABI over the engine for Emscripten
+  site/               static page (HTML/CSS/JS) + compiled lob.js / lob.wasm
 ```
 
 ## Limitations and next steps
